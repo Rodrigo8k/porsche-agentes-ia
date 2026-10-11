@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Porsche Sales Intelligence - Dashboard Aprimorado</title>
     <!-- Importando o Chart.js para os gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <style>
         :root {
             --porsche-red: #D5001C;
@@ -51,6 +51,43 @@
             white-space: nowrap;
         }
         
+
+        /* HERO */
+        header.hero {
+            position: relative;
+            display: block;
+            border: 1px solid #333;
+            border-bottom: 4px solid var(--porsche-red);
+            border-radius: 28px;
+            padding: 40px 48px 36px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            min-height: 280px;
+            /* Coloque hero.jpg ao lado do index.html para usar foto; sem ela, vale o degradê */
+            background:
+                linear-gradient(90deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.6) 55%, rgba(10,10,10,.25) 100%),
+                url('hero.jpg') center / cover no-repeat,
+                radial-gradient(circle at 80% 30%, #4a1018 0%, transparent 55%),
+                linear-gradient(135deg, #0d0d0d, #1c1c1c);
+        }
+        .hero-brand { display: flex; align-items: center; gap: 16px; letter-spacing: 3px; font-size: .85rem; color: #ddd; }
+        header.hero h1 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            line-height: 1.02;
+            max-width: 720px;
+            margin: 36px 0 14px;
+            color: #fff;
+        }
+        header.hero p { max-width: 640px; margin: 0; color: #e6e6e6; font-size: 1.05rem; }
+        header.hero .hero-src { margin-top: 10px; font-size: .8rem; color: var(--text-muted); }
+        header.hero .last-updated { position: absolute; top: 24px; right: 32px; }
+        @media (max-width: 768px) {
+            header.hero { padding: 28px 22px; border-radius: 20px; }
+            header.hero .last-updated { position: static; margin-top: 12px; }
+        }
+
         /* Seção de Filtros e Controles */
         .controls {
             display: flex;
@@ -93,15 +130,20 @@
         }
         .export-group {
             display: flex;
-            flex-direction: column;
-            align-items: end;
+            flex-direction: row;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .export-group button {
-            margin-top: 5px;
-            width: 100%;
-            justify-content: center;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
         }
-        
+        .export-group button:hover { background-color: var(--porsche-red); border-color: var(--porsche-red); }
+
         /* Seção de KPIs */
         .kpis {
             display: grid;
@@ -195,6 +237,15 @@
             width: 100% !important;
             height: 300px !important;
         }
+        .chart-error {
+            display: none;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            color: var(--text-light);
+            background: rgba(255, 152, 0, 0.12);
+        }
         .chart-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -275,44 +326,44 @@
 </head>
 <body>
 
-    <header>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Porsche_Logo.svg/1200px-Porsche_Logo.svg.png" alt="Porsche Logo" style="height: 40px;">
-            <div>
-                <h1><strong>PORSCHE</strong> SALES INTELLIGENCE</h1>
-                <p style="color: var(--text-muted); margin-top: 5px;">Dashboard interativa de performance comercial baseada em dados sanitizados.</p>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
-                    Dados extraídos de: 8683bed0-cc33-4e06-bca9-04db9c31f9e2.xlsx
-                </p>
-            </div>
+    <header class="hero">
+        <div class="hero-brand">
+            <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Porsche" style="flex-shrink:0"><defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8C676"/><stop offset="1" stop-color="#9A7428"/></linearGradient></defs><path d="M4 12C4 7 7 4 12 4h28v10H20c-3 0-5 2-5 5v21H4z" fill="url(#gold)"/></svg>
+            <span>PORSCHE SALES INTELLIGENCE</span>
         </div>
+        <h1>Performance comercial com precisão esportiva.</h1>
+        <p>Dashboard executivo para responder quais modelos lideram por cidade, qual ano de modelo mais saiu e quais oportunidades aparecem no mix local de vendas.</p>
+        <p class="hero-src">Fonte: planilha Porsche sanitizada (100 vendas)</p>
         <div class="last-updated" id="lastUpdated">Carregado em: --</div>
     </header>
 
     <div class="controls">
         <div class="filter-group">
-            <label>Modelo da Porsche</label>
+            <label for="filterModel">Modelo da Porsche</label>
             <select id="filterModel" onchange="updateDashboard()"><option value="All">Todos</option></select>
         </div>
         <div class="filter-group">
-            <label>Ano do Modelo</label>
+            <label for="filterYear">Ano do Modelo</label>
             <select id="filterYear" onchange="updateDashboard()"><option value="All">Todos</option></select>
         </div>
         <div class="filter-group">
-            <label>Estado</label>
-            <label>
-                <select id="filterState" onchange="updateDashboard()"><option value="All">Todos</option></select>
-            </div>
+            <label for="filterState">Estado</label>
+            <select id="filterState" onchange="updateDashboard()"><option value="All">Todos</option></select>
+        </div>
         <div class="filter-group">
-            <label>Método de Pagamento</label>
+            <label for="filterCity">Cidade</label>
+            <select id="filterCity" onchange="updateDashboard()"><option value="All">Todas</option></select>
+        </div>
+        <div class="filter-group">
+            <label for="filterPay">Método de Pagamento</label>
             <select id="filterPay" onchange="updateDashboard()"><option value="All">Todos</option></select>
         </div>
         <div class="export-group">
             <button onclick="exportFilteredCSV()" title="Exportar dados filtrados como CSV">
                 📥 Exportar CSV
             </button>
-            <button onclick="exportChartAsPNG()" title="Exportar gráfico atual como PNG">
-                🖼️ Exportar PNG
+            <button onclick="exportChartAsPNG()" title="Exportar o gráfico de receita por ano como PNG">
+                🖼️ Exportar PNG (Receita por ano)
             </button>
             <button onclick="resetFilters()" title="Resetar todos os filtros">
                 🔄 Resetar Filtros
@@ -350,6 +401,9 @@
         </div>
     </div>
 
+    <div id="chartError" class="chart-error" role="alert">
+        Não foi possível carregar a biblioteca de gráficos. Verifique sua conexão e recarregue a página; KPIs e tabela continuam disponíveis.
+    </div>
     <div class="charts">
         <!-- Linha de gráficos principais -->
         <div class="chart-row">
@@ -396,10 +450,13 @@
                         <tr>
                             <th>Modelo</th>
                             <th>Cartão de Crédito</th>
-                            <th>Transferência Bancária</th>
+                            <th>Transferência (Wire)</th>
                             <th>Financiamento</th>
                             <th>Dinheiro</th>
+                            <th>Transferência Bancária</th>
+                            <th>Cartão de Débito</th>
                             <th>Leasing</th>
+                            <th>ACH</th>
                             <th>Criptomoeda</th>
                             <th>Outros</th>
                         </tr>
@@ -407,6 +464,7 @@
                     <tbody></tbody>
                 </table>
             </div>
+
         </div>
     </div>
 
@@ -418,15 +476,18 @@
         let charts = {};
 
         // Configuração global do Chart.js
-        Chart.defaults.color = '#AAAAAA';
-        Chart.defaults.font.size = 12;
-        Chart.defaults.borderColor = '#eee';
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.color = '#AAAAAA';
+            Chart.defaults.font.size = 12;
+            Chart.defaults.borderColor = '#3a3a3a';
+        }
 
         // Inicialização
         function init() {
             populateSelect('filterModel', 'PorscheModelSanitized');
             populateSelect('filterYear', 'ModelYearSanitized');
             populateSelect('filterState', 'StateSanitized');
+            populateSelect('filterCity', 'CitySanitized');
             populateSelect('filterPay', 'PayMethodSanitized');
             updateDashboard();
             updateLastUpdated();
@@ -458,12 +519,14 @@
             const selYear = document.getElementById('filterYear').value;
             const selState = document.getElementById('filterState').value;
             const selPay = document.getElementById('filterPay').value;
+            const selCity = document.getElementById('filterCity').value;
 
             // Aplicar Filtros
             const filteredData = rawData.filter(item => {
                 return (selModel === 'All' || item.PorscheModelSanitized === selModel) &&
                        (selYear === 'All' || item.ModelYearSanitized === selYear) &&
                        (selState === 'All' || item.StateSanitized === selState) &&
+                       (selCity === 'All' || item.CitySanitized === selCity) &&
                        (selPay === 'All' || item.PayMethodSanitized === selPay);
             });
 
@@ -471,7 +534,13 @@
             updateMainKPIs(filteredData);
             
             // Atualizar gráficos
-            updateCharts(filteredData);
+            const chartError = document.getElementById('chartError');
+            if (typeof Chart === 'undefined') {
+                chartError.style.display = 'block';
+            } else {
+                chartError.style.display = 'none';
+                updateCharts(filteredData);
+            }
             
             // Atualizar tabela de pagamento por modelo
             updatePaymentTable(filteredData);
@@ -787,7 +856,7 @@
                                 label: function(context) {
                                     const label = context.label || '';
                                     const value = context.parsed;
-                                    const total = context.dataset._meta[Object.keys(context.dataset._meta)[0]].total;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((value / total) * 100).toFixed(1);
                                     return `${label}: ${value} (${percentage}%)`;
                                 }
@@ -813,7 +882,7 @@
                 .map(entry => entry[0]);
                 
             // Payment methods we care about
-            const payMethods = ['Credit Card', 'Wire Transfer', 'Financing', 'Cash', 'Bank Transfer', 'Debit Card', 'Lease', 'ACH Payment', 'Crypto Payment'];
+            const payMethods = ['Credit Card', 'Wire Transfer', 'Financing', 'Cash', 'Bank Transfer', 'Debit Card', 'Lease', 'ACH Payment', 'Crypto Payment', 'Others'];
             
             topModels.forEach(model => {
                 const row = document.createElement('tr');
@@ -840,11 +909,13 @@
             const selYear = document.getElementById('filterYear').value;
             const selState = document.getElementById('filterState').value;
             const selPay = document.getElementById('filterPay').value;
+            const selCity = document.getElementById('filterCity').value;
             
             const filteredData = rawData.filter(item => {
                 return (selModel === 'All' || item.PorscheModelSanitized === selModel) &&
                        (selYear === 'All' || item.ModelYearSanitized === selYear) &&
                        (selState === 'All' || item.StateSanitized === selState) &&
+                       (selCity === 'All' || item.CitySanitized === selCity) &&
                        (selPay === 'All' || item.PayMethodSanitized === selPay);
             });
             
@@ -882,21 +953,23 @@
         }
 
         function exportChartAsPNG() {
-            // Export the currently visible chart? We'll export the first chart as example
-            // In a real app, you might let user choose or export all
             const canvas = document.getElementById('chartYearlyRevenue');
-            if(canvas) {
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `porsche_chart_${new Date().toISOString().slice(0,10)}.png`;
-                link.click();
+            if (typeof Chart === 'undefined' || !charts.chartYearlyRevenue || !canvas) {
+                alert('O gráfico de receita por ano não está disponível para exportação.');
+                return;
             }
+
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `porsche_revenue_by_model_year_${new Date().toISOString().slice(0,10)}.png`;
+            link.click();
         }
 
         function resetFilters() {
             document.getElementById('filterModel').selectedIndex = 0;
             document.getElementById('filterYear').selectedIndex = 0;
             document.getElementById('filterState').selectedIndex = 0;
+            document.getElementById('filterCity').selectedIndex = 0;
             document.getElementById('filterPay').selectedIndex = 0;
             updateDashboard();
         }
