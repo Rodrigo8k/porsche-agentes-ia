@@ -63,12 +63,37 @@
             margin-bottom: 24px;
             overflow: hidden;
             min-height: 280px;
-            /* Coloque hero.jpg ao lado do index.html para usar foto; sem ela, vale o degradê */
             background:
                 linear-gradient(90deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.6) 55%, rgba(10,10,10,.25) 100%),
                 url('hero.jpg') center / cover no-repeat,
                 radial-gradient(circle at 80% 30%, #4a1018 0%, transparent 55%),
                 linear-gradient(135deg, #0d0d0d, #1c1c1c);
+        }
+        header.hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(90deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.6) 55%, rgba(10,10,10,.25) 100%);
+            pointer-events: none;
+        }
+        .hero-photo {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            opacity: 0;
+            background-position: center;
+            background-size: cover;
+            transition: opacity 1.2s ease;
+            pointer-events: none;
+        }
+        .hero-photo.is-active { opacity: 1; }
+        header.hero > :not(.hero-photo) {
+            position: relative;
+            z-index: 2;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-photo { transition: none; }
         }
         .hero-brand { display: flex; align-items: center; gap: 16px; letter-spacing: 3px; font-size: .85rem; color: #ddd; }
         header.hero h1 {
@@ -327,6 +352,8 @@
 <body>
 
     <header class="hero">
+        <div class="hero-photo is-active" aria-hidden="true"></div>
+        <div class="hero-photo" aria-hidden="true"></div>
         <div class="hero-brand">
             <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Porsche" style="flex-shrink:0"><defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8C676"/><stop offset="1" stop-color="#9A7428"/></linearGradient></defs><path d="M4 12C4 7 7 4 12 4h28v10H20c-3 0-5 2-5 5v21H4z" fill="url(#gold)"/></svg>
             <span>PORSCHE SALES INTELLIGENCE</span>
@@ -484,6 +511,7 @@
 
         // Inicialização
         function init() {
+            startHeroSlideshow();
             populateSelect('filterModel', 'PorscheModelSanitized');
             populateSelect('filterYear', 'ModelYearSanitized');
             populateSelect('filterState', 'StateSanitized');
@@ -491,6 +519,40 @@
             populateSelect('filterPay', 'PayMethodSanitized');
             updateDashboard();
             updateLastUpdated();
+        }
+
+        const heroPhotos = [
+            'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=2000&q=80',
+            'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=2000&q=80',
+            'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=2000&q=80'
+        ];
+        let currentHeroPhoto = -1;
+        let activeHeroLayer = 0;
+
+        function showHeroPhoto(index) {
+            const layers = document.querySelectorAll('.hero-photo');
+            const nextLayerIndex = 1 - activeHeroLayer;
+            const image = new Image();
+
+            image.onload = () => {
+                const nextLayer = layers[nextLayerIndex];
+                nextLayer.style.backgroundImage = `url("${image.src}")`;
+                nextLayer.classList.add('is-active');
+                layers[activeHeroLayer].classList.remove('is-active');
+                activeHeroLayer = nextLayerIndex;
+                currentHeroPhoto = index;
+            };
+            image.onerror = () => {
+                console.error(`Não foi possível carregar a foto de fundo: ${heroPhotos[index]}`);
+            };
+            image.src = heroPhotos[index];
+        }
+
+        function startHeroSlideshow() {
+            showHeroPhoto(0);
+            window.setInterval(() => {
+                showHeroPhoto((currentHeroPhoto + 1) % heroPhotos.length);
+            }, 30000);
         }
 
         function updateLastUpdated() {
