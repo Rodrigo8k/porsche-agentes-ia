@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Porsche Sales Intelligence - Dashboard Aprimorado</title>
+    <title>Porsche Sales Intelligence</title>
     <!-- Importando o Chart.js para os gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <style>
@@ -559,17 +559,41 @@
             document.getElementById('lastUpdated').textContent = `Carregado em: ${new Date().toLocaleString('pt-BR')}`;
         }
 
-        function populateSelect(id, key) {
+        function populateSelect(id, key, filterFn = () => true) {
             const select = document.getElementById(id);
-            // Clear existing options except first
-            select.length = 1;
-            const uniqueValues = [...new Set(rawData.map(item => item[key]))].sort();
+            const currentValue = select.value;
+            const uniqueValues = [...new Set(rawData.filter(filterFn).map(item => item[key]))]
+                .filter(value => value !== null && value !== undefined && value !== '')
+                .sort((a, b) => String(a).localeCompare(String(b)));
+
+            select.length = 0;
+            const allOption = document.createElement('option');
+            allOption.value = 'All';
+            allOption.textContent = id === 'filterCity' ? 'Todas' : 'Todos';
+            select.appendChild(allOption);
+
             uniqueValues.forEach(val => {
                 const option = document.createElement('option');
                 option.value = val;
                 option.textContent = val;
                 select.appendChild(option);
             });
+
+            const shouldKeepCurrentValue = currentValue && currentValue !== 'All' && uniqueValues.includes(currentValue);
+            select.value = shouldKeepCurrentValue ? currentValue : 'All';
+        }
+
+        function syncCityFilterOptions() {
+            const stateSelect = document.getElementById('filterState');
+            const selectedState = stateSelect.value;
+            const citySelect = document.getElementById('filterCity');
+            const currentCity = citySelect.value;
+
+            populateSelect('filterCity', 'CitySanitized', item => selectedState === 'All' || item.StateSanitized === selectedState);
+
+            if (currentCity !== 'All' && !Array.from(citySelect.options).some(option => option.value === currentCity)) {
+                citySelect.value = 'All';
+            }
         }
 
         function formatCurrency(value) {
@@ -577,6 +601,8 @@
         }
 
         function updateDashboard() {
+            syncCityFilterOptions();
+
             const selModel = document.getElementById('filterModel').value;
             const selYear = document.getElementById('filterYear').value;
             const selState = document.getElementById('filterState').value;
@@ -883,6 +909,7 @@
                         x: { 
                             type: 'linear',
                             position: 'bottom',
+                            ticks: { stepSize: 1, callback: value => String(value) },
                             title: { display: true, text: 'Ano do Modelo' }
                         },
                         y: { 
